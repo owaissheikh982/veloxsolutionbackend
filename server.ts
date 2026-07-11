@@ -384,12 +384,17 @@ app.get("/api/infrastructure", (req, res) => {
 async function startServer() {
   if (process.env.NODE_ENV !== "production") {
     console.log("Starting server in development mode with Vite middleware...");
-    const { createServer: createViteServer } = await import("vite");
-    const vite = await createViteServer({
-      server: { middlewareMode: true },
-      appType: "spa",
-    });
-    app.use(vite.middlewares);
+    try {
+      const { createServer: createViteServer } = await import("vite");
+      const vite = await createViteServer({
+        server: { middlewareMode: true },
+        appType: "spa",
+      });
+      app.use(vite.middlewares);
+      console.log("[VELOX SERVER] Vite middleware attached.");
+    } catch (viteErr) {
+      console.warn("[VELOX SERVER] Vite not available, running in API-only mode.", viteErr);
+    }
   } else {
     console.log("Starting server in production mode...");
     const distPath = path.join(process.cwd(), 'dist');
