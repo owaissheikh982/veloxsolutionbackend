@@ -380,15 +380,18 @@ async function startServer() {
   } else {
     console.log("Starting server in production mode...");
     const distPath = path.join(process.cwd(), 'dist');
-    if (fs.existsSync(distPath)) {
+    const indexPath = path.join(distPath, 'index.html');
+    if (fs.existsSync(distPath) && fs.existsSync(indexPath)) {
+      // Full-stack mode: serve frontend static files
       app.use(express.static(distPath));
       app.get('*', (req, res) => {
-        res.sendFile(path.join(distPath, 'index.html'));
+        res.sendFile(indexPath);
       });
     } else {
-      console.log("No frontend build found at 'dist'. Serving API only.");
+      // Backend-only mode: just serve the API
+      console.log("No frontend build found. Running in API-only mode.");
       app.get('/', (req, res) => {
-        res.json({ message: "Velox Solutions API is running." });
+        res.json({ message: "Velox Solutions API is running.", status: "healthy" });
       });
     }
   }
