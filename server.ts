@@ -1,5 +1,4 @@
 import express from "express";
-import cors from "cors";
 import path from "path";
 import dotenv from "dotenv";
 import { GoogleGenAI } from "@google/genai";
@@ -11,7 +10,6 @@ dotenv.config();
 const app = express();
 const PORT = 3002;
 
-app.use(cors({ origin: "*" })); // Yeh line har jagah se request accept karegi
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
