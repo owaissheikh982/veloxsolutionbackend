@@ -149,10 +149,23 @@ Keep responses structured, concise, and beautifully styled with Markdown. Bullet
     const client = getGenAIClient();
     if (client) {
       // Map frontend format {role, content} to Gemini's expected format {role, parts}
-      const contents = messages.map((m: any) => ({
+      // Gemini requires: (1) starts with 'user', (2) strictly alternating user/model turns
+      let mappedContents = messages.map((m: any) => ({
         role: m.role === 'assistant' ? 'model' : 'user',
         parts: [{ text: m.content }]
       }));
+
+      // Strip any leading 'model' messages — Gemini requires user to go first
+      while (mappedContents.length > 0 && mappedContents[0]?.role === 'model') {
+        mappedContents.shift();
+      }
+
+      // Ensure at least one user message remains
+      if (mappedContents.length === 0) {
+        return res.status(400).json({ error: "No user message found in conversation." });
+      }
+
+      const contents = mappedContents;
 
       try {
         console.log("[VELOX AI] Attempting chat generation with gemini-1.5-flash...");
