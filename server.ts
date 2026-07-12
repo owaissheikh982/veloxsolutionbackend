@@ -249,23 +249,33 @@ app.get("/api/leads", (req, res) => {
 
 async function startServer() {
   if (process.env.NODE_ENV !== "production") {
-    // Dynamically import vite only in dev mode (it's a devDependency)
-    const { createServer: createViteServer } = await import("vite");
-    const vite = await createViteServer({
-      server: { middlewareMode: true },
-      appType: "spa",
-    });
-    app.use(vite.middlewares);
+    console.log("Starting server in development mode with Vite middleware...");
+    try {
+      const { createServer: createViteServer } = await import("vite");
+      const vite = await createViteServer({
+        server: { middlewareMode: true },
+        appType: "spa",
+      });
+      app.use(vite.middlewares);
+      console.log("[VELOX SERVER] Vite middleware attached.");
+    } catch (viteErr) {
+      console.warn("[VELOX SERVER] Vite not available, running in API-only mode.", viteErr);
+    }
   } else {
+    console.log("Starting server in production mode...");
     const distPath = path.join(process.cwd(), 'dist');
-    if (fs.existsSync(distPath)) {
+    const indexPath = path.join(distPath, 'index.html');
+    if (fs.existsSync(distPath) && fs.existsSync(indexPath)) {
+      // Full-stack mode: serve frontend static files
       app.use(express.static(distPath));
       app.get('/*', (req, res) => {
-        res.sendFile(path.join(distPath, 'index.html'));
+        res.sendFile(indexPath);
       });
     } else {
+      // Backend-only mode: just serve the API
+      console.log("No frontend build found. Running in API-only mode.");
       app.get('/', (req, res) => {
-        res.json({ message: "Velox Solutions API is active." });
+        res.json({ message: "Velox Solutions API is running.", status: "healthy" });
       });
     }
   }
@@ -274,6 +284,8 @@ async function startServer() {
     console.log(`[VELOX SERVER] Dynamic engine operational at port: ${PORT}`);
   });
 }
+
+
 
 startServer().catch((err) => {
   console.error("Failed to start application server:", err);
